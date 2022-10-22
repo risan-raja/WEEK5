@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request,redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask("WEEK5")
@@ -92,6 +92,40 @@ def create_student():
         return redirect(url_for('main'))
     if request.method == 'GET':
         return render_template("create_student.html.jinja")
+
+
+@app.route('/student/<int:student_id>/update', methods=['GET', 'POST'])
+def update_student(student_id):
+    student = Student.query.filter_by(student_id=student_id).first()
+    if request.method == 'POST':
+        first_name = request.form['f_name']
+        last_name = request.form['l_name']
+        student.first_name = first_name
+        student.last_name = last_name
+        student.courses = []
+        db.session.commit()
+        selected_courses = request.form.getlist('courses')
+        for course_id in selected_courses:
+            course = Course.query.filter_by(course_id=int(course_id[-1])).first()
+            student.courses.append(course)
+        db.session.commit()
+        return redirect(url_for('main'))
+
+    if request.method == 'GET':
+        courses = [""]*4
+        for course in student.courses:
+            courses[course.course_id-1] = "checked=true"
+
+        return render_template("update_student.html.jinja", student=student, courses=courses)
+
+
+@app.route('/student/<int:student_id>/delete', methods=['GET'])
+def delete_student(student_id):
+    student = Student.query.filter_by(student_id=student_id).first()
+    if request.method == 'GET':
+        db.session.delete(student)
+        db.session.commit()
+        return redirect(url_for('main'))
 
 
 if __name__ == "__main__":
