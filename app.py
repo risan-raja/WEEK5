@@ -67,56 +67,6 @@ course_error_codes = {
 }
 
 
-class Student(db.Model):
-    student_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    roll_number = db.Column(db.Integer, unique=True, nullable=False)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=True)
-    courses = db.relationship(
-        'Course', secondary=enrollments, backref='students', lazy=True)
-
-
-student_error_codes = {
-    'STUDENT001': {
-        "error_code": "STUDENT001",
-        "error_message": "Roll Number required"
-    },
-    'STUDENT002': {
-        "error_code": "STUDENT002",
-        "error_message": "First Name is required"
-    }
-
-}
-
-
-def check_roll_exist(roll_number):
-    if Student.query.filter_by(roll_number=roll_number).first():
-        return True
-    return False
-
-
-def json_student(student, message, code=200):
-    student_details = {
-        'student_id': student.student_id,
-        'roll_number': student.roll_number,
-        'first_name': student.first_name,
-        'last_name': student.last_name,
-    }
-    return make_response(jsonify(student_details), code, {'Content-Type': 'application/json',
-                                                          'message': f'{message}'}, )
-
-
-class Enrollments(db.Model):
-    __table_args__ = {'extend_existing': True}
-    enrollment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    student_id = db.Column(
-        db.Integer, db.ForeignKey("student.student_id"), nullable=False
-    )
-    course_id = db.Column(
-        db.Integer, db.ForeignKey("course.course_id"), nullable=False
-    )
-
-
 class CourseCRUDApi(Resource):
     def get(self, course_id):
         course = Course.query.filter_by(course_id=course_id).first()
@@ -185,6 +135,51 @@ class CourseCreateApi(Resource):
             return json_course(course, 'Successfully Created', code=201)
 
 
+class Student(db.Model):
+    student_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    roll_number = db.Column(db.String, unique=True, nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=True)
+    courses = db.relationship(
+        'Course', secondary=enrollments, backref='students', lazy=True)
+
+
+student_error_codes = {
+    'STUDENT001': {
+        "error_code": "STUDENT001",
+        "error_message": "Roll Number required"
+    },
+    'STUDENT002': {
+        "error_code": "STUDENT002",
+        "error_message": "First Name is required"
+    }
+
+}
+
+
+def check_roll_exist(roll_number):
+    if Student.query.filter_by(roll_number=roll_number).first():
+        return True
+    return False
+
+
+def json_student(student, message, code=200):
+    student_details = {
+        'student_id': student.student_id,
+        'roll_number': student.roll_number,
+        'first_name': student.first_name,
+        'last_name': student.last_name,
+    }
+    return make_response(jsonify(student_details), code, {'Content-Type': 'application/json',
+                                                          'message': f'{message}'}, )
+
+
+student_parser = reqparse.RequestParser()
+student_parser.add_argument('roll_number', type=str)
+student_parser.add_argument('first_name', type=str)
+student_parser.add_argument('last_name', type=str)
+
+
 class StudentCRUDApi(Resource):
     def get(self, student_id):
         student = Student.query.filter_by(student_id=student_id).first()
@@ -223,9 +218,49 @@ class StudentCRUDApi(Resource):
         return abort(404, message="Student not found")
 
 
+class StudentCreateApi(Resource):
+    def post(self):
+        args = student_parser.parse_args()
+        if args['roll_number'] is None and args['first_name'] is None:
+            return make_response(jsonify([student_error_codes['STUDENT001'], student_error_codes['STUDENT002']]), 400,
+                                 {'Content-Type': 'application/json'}, )
+        elif args['roll_number'] is None:
+            return make_response(jsonify(student_error_codes['STUDENT001']), 400,
+                                 {'Content-Type': 'application/json'}, )
+        elif args['first_name'] is None:
+            return make_response(jsonify(student_error_codes['STUDENT002']), 400,
+                                 {'Content-Type': 'application/json'}, )
+        elif check_roll_exist(args['roll_number']):
+            return abort(409, message="roll_number already exist")
+        else:
+            student = Student(
+                roll_number=args['roll_number'],
+                first_name=args['first_name'],
+                last_name=args['last_name']
+            )
+            db.session.add(student)
+            db.session.commit()
+            return json_student(student, 'Successfully Created', code=201)
+
+
+class Enrollments(db.Model):
+    __table_args__ = {'extend_existing': True}
+    enrollment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    student_id = db.Column(
+        db.Integer, db.ForeignKey("student.student_id"), nullable=False
+    )
+    course_id = db.Column(
+        db.Integer, db.ForeignKey("course.course_id"), nullable=False
+    )
+
+
+
+
+
 api.add_resource(CourseCRUDApi, '/api/course/<int:course_id>')
 api.add_resource(CourseCreateApi, '/api/course')
 api.add_resource(StudentCRUDApi, '/api/student/<int:student_id>')
+api.add_resource(StudentCreateApi, '/api/student')
 
 with app.app_context():
     Student.__table__.create(bind=db.engine, checkfirst=True)
