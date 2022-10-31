@@ -1,6 +1,6 @@
 flaskenv/*
 __pycache__/app.cpython-310.pyc
-
+# ds
 .idea/dataSources.xml
 .idea/runConfigurations/WEEK5.xml
 .idea/runConfigurations/WEEK5.xml
