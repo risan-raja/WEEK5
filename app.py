@@ -1,13 +1,10 @@
-import os
-
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
-app = Flask("WEEK5")
+app = Flask(__name__)
 
-current_dir = os.path.abspath(os.path.dirname(__file__))
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + \
-                                        os.path.join(current_dir, "database.sqlite3")
+# current_dir = os.path.abspath(os.path.dirname(__file__))
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.sqlite3"
 db = SQLAlchemy()
 db.init_app(app)
 app.app_context().push()
@@ -112,9 +109,9 @@ def update_student(student_id):
         return redirect(url_for('main'))
 
     if request.method == 'GET':
-        courses = [""]*4
+        courses = [""] * 4
         for course in student.courses:
-            courses[course.course_id-1] = "checked=true"
+            courses[course.course_id - 1] = "checked=true"
 
         return render_template("update_student.html.jinja", student=student, courses=courses)
 
@@ -127,6 +124,20 @@ def delete_student(student_id):
         db.session.commit()
         return redirect(url_for('main'))
 
+
+@app.route('/student/<int:student_id>', methods=['GET'])
+def student_detail(student_id):
+    student = Student.query.filter_by(student_id=student_id).first()
+    if request.method == 'GET':
+        return render_template("student_details.html.jinja", student=student)
+
+
+
+with app.app_context():
+    Student.__table__.create(bind=db.engine, checkfirst=True)
+    Course.__table__.create(bind=db.engine, checkfirst=True)
+    Enrollments.__table__.create(bind=db.engine, checkfirst=True)
+    db.session.commit()
 
 if __name__ == "__main__":
     app.run(debug=True)
