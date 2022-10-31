@@ -3,6 +3,26 @@
 <head>
     <meta charset="utf-8">
     <title>Update Student</title>
+    <style>
+        #heading-box {
+            width: 100%;
+        }
+
+        #heading-box-left {
+            float: left;
+            width: 50%;
+        }
+
+        #heading-box-right {
+            text-align: right;
+            float: right;
+            width: 50%;
+        }
+
+        .align-center {
+            text-align: center;
+        }
+    </style>
 <body>
 <h1>Update Student</h1>
 <form action="/student/{{ student.student_id }}/update" method="POST" id="update-student-form">

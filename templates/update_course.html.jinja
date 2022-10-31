@@ -3,6 +3,26 @@
 <head>
     <meta charset="utf-8">
     <title>Update Course</title>
+    <style>
+        #heading-box {
+            width: 100%;
+        }
+
+        #heading-box-left {
+            float: left;
+            width: 50%;
+        }
+
+        #heading-box-right {
+            text-align: right;
+            float: right;
+            width: 50%;
+        }
+
+        .align-center {
+            text-align: center;
+        }
+    </style>
 <body>
 <h1>Update Course</h1>
 <form action="/course/{{ course.course_id }}/update" method="POST" id="update-course-form">
@@ -21,6 +41,6 @@
     <div>
         <input type="submit" value="Submit">
     </div>
-    </form>
+</form>
 </body>
 </html>

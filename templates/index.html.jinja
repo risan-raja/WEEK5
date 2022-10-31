@@ -2,19 +2,39 @@
 <html lang="en-US">
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="../static/style.css">
     <title>Home</title>
+    <style>
+        #heading-box {
+            width: 100%;
+        }
+
+        #heading-box-left {
+            float: left;
+            width: 50%;
+        }
+
+        #heading-box-right {
+            text-align: right;
+            float: right;
+            width: 50%;
+        }
+
+        .align-center {
+            text-align: center;
+        }
+    </style>
 <body>
-<div id="heading-box" >
-    <div id="heading-box-left" >
+<div id="heading-box">
+    <div id="heading-box-left">
         <h1>Students list</h1>
     </div>
     <div id="heading-box-right">
         <h1><a href="/courses">Go to Courses</a></h1>
     </div>
 </div>
-{% if students| length > 0 %}
-    <table id="all-students">
+
+<table id='all-students'>
+    {% if students| length > 0 %}
         <tr>
             <th>SNo</th>
             <th>Roll Number</th>
@@ -35,10 +55,11 @@
                 </td>
             </tr>
         {% endfor %}
-    </table>
-{% else %}
-    <p>No students found. Add the students now!</p><br/>
-{% endif %}
+    {% else %}
+        <p>No students found. Add the students now!</p><br/>
+    {% endif %}
+</table>
+
 <br>
 <div style="text-align: center">
     <a href="/student/create"> + Add Student</a>

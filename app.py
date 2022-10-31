@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -27,16 +27,16 @@ enrollments = db.Table(
 
 class Course(db.Model):
     course_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    course_name = db.Column(db.String(100), nullable=False)
-    course_code = db.Column(db.String(100), nullable=False)
-    course_description = db.Column(db.String(100), nullable=True)
+    course_name = db.Column(db.String, nullable=False)
+    course_code = db.Column(db.String, unique=True, nullable=False)
+    course_description = db.Column(db.String, nullable=True)
 
 
 class Student(db.Model):
     student_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     roll_number = db.Column(db.String, unique=True, nullable=False)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=True)
+    first_name = db.Column(db.String, nullable=False)
+    last_name = db.Column(db.String, nullable=True)
     courses = db.relationship(
         'Course', secondary=enrollments, backref='students', lazy=True)
 
@@ -72,7 +72,7 @@ STUDENT CRUD OPERATIONS
 @app.route('/student/create', methods=['GET', 'POST'])
 def create_student():
     if request.method == 'POST':
-        roll_number = int(request.form['roll'])
+        roll_number = request.form['roll']
         first_name = request.form['f_name']
         last_name = request.form['l_name']
         if check_roll_exist(roll_number):
@@ -85,7 +85,9 @@ def create_student():
             )
             db.session.add(student)
             db.session.commit()
-        return redirect(url_for('main'))
+        response = make_response(main())
+        response.status_code = 200
+        return response
     if request.method == 'GET':
         return render_template("create_student.html.jinja")
 
@@ -105,7 +107,9 @@ def update_student(student_id):
             if course not in curr_courses:
                 student.courses.append(Course.query.filter_by(course_id=course).first())
         db.session.commit()
-        return redirect(url_for('main'))
+        response = make_response(main())
+        response.status_code = 200
+        return response
 
     if request.method == 'GET':
         courses = Course.query.all()
@@ -118,7 +122,7 @@ def delete_student(student_id):
     if request.method == 'GET':
         db.session.delete(student)
         db.session.commit()
-        return redirect(url_for('main'))
+        return redirect(url_for('main'), code=200)
 
 
 @app.route('/student/<int:student_id>', methods=['GET'])
@@ -128,13 +132,16 @@ def student_detail(student_id):
         return render_template("student_details.html.jinja", student=student)
 
 
-@app.route("/student/<int:student_id>/withdraw/<int:course_id>", methods=['GET', 'POST'])
+@app.route("/student/<int:student_id>/withdraw/<int:course_id>", methods=['GET'])
 def withdraw_course(student_id, course_id):
-    student = Student.query.filter_by(student_id=student_id).first()
-    course = Course.query.filter_by(course_id=course_id).first()
-    student.courses.remove(course)
-    db.session.commit()
-    return redirect(url_for('main'))
+    if request.method == 'GET':
+        student = Student.query.filter_by(student_id=student_id).first()
+        course = Course.query.filter_by(course_id=course_id).first()
+        student.courses.remove(course)
+        db.session.commit()
+        response = make_response(main())
+        response.status_code = 200
+        return response
 
 
 """
@@ -170,9 +177,11 @@ def create_course():
             )
             db.session.add(course)
             db.session.commit()
-        return redirect(url_for('course_index'))
+            response = make_response(course_index())
+            response.status_code = 200
+            return response
     if request.method == 'GET':
-        return render_template("create_course.html.jinja")
+        return render_template("create_course.html.jinja"), 200
 
 
 @app.route('/course/<int:course_id>/update', methods=['GET', 'POST'])
@@ -186,7 +195,9 @@ def update_course(course_id):
         # course.course_code = course_code
         course.course_description = course_description
         db.session.commit()
-        return redirect(url_for('course_index'))
+        response = make_response(course_index())
+        response.status_code = 200
+        return response
     if request.method == 'GET':
         return render_template("update_course.html.jinja", course=course)
 
@@ -197,7 +208,9 @@ def delete_course(course_id):
     if request.method == 'GET':
         db.session.delete(course)
         db.session.commit()
-        return redirect(url_for('main'))
+        response = make_response(main())
+        response.status_code = 200
+        return response
 
 
 @app.route('/course/<int:course_id>', methods=['GET'])
