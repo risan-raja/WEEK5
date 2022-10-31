@@ -1,6 +1,6 @@
 from flask import Flask, make_response, jsonify
 from flask_cors import CORS
-from flask_restful import Resource, Api, reqparse, abort
+from flask_restful import Resource, Api, reqparse, abort, marshal, fields
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -231,7 +231,7 @@ class StudentCreateApi(Resource):
             return make_response(jsonify(student_error_codes['STUDENT002']), 400,
                                  {'Content-Type': 'application/json'}, )
         elif check_roll_exist(args['roll_number']):
-            return abort(409, message="roll_number already exist")
+            return abort(409, message="Student already exist")
         else:
             student = Student(
                 roll_number=args['roll_number'],
@@ -254,13 +254,101 @@ class Enrollments(db.Model):
     )
 
 
+enrollment_error_codes = {
+    'ENROLLMENT001': {
+        "error_code": "ENROLLMENT001",
+        "error_message": "Course does not exist"
+    },
+    'ENROLLMENT002': {
+        "error_code": "ENROLLMENT002",
+        "error_message": "Student does not exist"
+    }
 
+}
+
+
+def enrollment_json(enrollment, message, code=200):
+    enrollment_details = {
+        'enrollment_id': enrollment.enrollment_id,
+        'student_id': enrollment.student_id,
+        'course_id': enrollment.course_id,
+    }
+    return make_response(jsonify(enrollment_details), code, {'Content-Type': 'application/json',
+                                                             'message': f'{message}'}, )
+
+
+enrollment_fields = {
+    'enrollment_id': fields.Integer,
+    'student_id': fields.Integer,
+    'course_id': fields.Integer
+}
+
+enrollment_parser = reqparse.RequestParser()
+enrollment_parser.add_argument('course_id', type=int)
+
+
+def get_enrollments(enrollment_records):
+    return marshal(enrollment_records, enrollment_fields)
+
+
+class GetEnrollmentsApi(Resource):
+    def get(self, student_id):
+        student = Student.query.filter_by(student_id=student_id).first()
+        if student:
+            enrollment_records = Enrollments.query.filter_by(student_id=student_id).all()
+            if enrollment_records:
+                return make_response(jsonify(get_enrollments(enrollment_records)), 200,
+                                     {'Content-Type': 'application/json'}, )
+            return abort(404, message="Student is not enrolled in any course")
+        return make_response(jsonify(enrollment_error_codes['ENROLLMENT002']), 400,
+                             {'Content-Type': 'application/json'}, )
+
+    def post(self, student_id):
+        args = enrollment_parser.parse_args()
+        course_id = args['course_id']
+        course = Course.query.filter_by(course_id=course_id).first()
+        if (course_id is not None) and course:
+            student = Student.query.filter_by(student_id=student_id).first()
+            if student:
+                enrollment = Enrollments(
+                    student_id=student_id,
+                    course_id=course_id
+                )
+                db.session.add(enrollment)
+                db.session.commit()
+                enrollment_record = Enrollments.query.filter_by(enrollment_id=enrollment.enrollment_id).first()
+                return make_response(jsonify(get_enrollments(enrollment_record)), 201,
+                                     {'Content-Type': 'application/json'}, )
+            return make_response(jsonify(enrollment_error_codes['ENROLLMENT002']), 400,
+                                 {'Content-Type': 'application/json'}, )
+        return make_response(jsonify(enrollment_error_codes['ENROLLMENT001']), 400,
+                             {'Content-Type': 'application/json'}, )
+
+
+class DeleteEnrollmentApi(Resource):
+    def delete(self, student_id, course_id):
+        student = Student.query.filter_by(student_id=student_id).first()
+        if student:
+            course = Course.query.filter_by(course_id=course_id).first()
+            if course:
+                enrollment = Enrollments.query.filter_by(student_id=student_id, course_id=course_id).first()
+                if enrollment:
+                    db.session.delete(enrollment)
+                    db.session.commit()
+                    return make_response({'message': 'Successfully Deleted'}, 200)
+                return abort(404, message="Enrollment for the student not found")
+            return make_response(jsonify(enrollment_error_codes['ENROLLMENT001']), 400,
+                                 {'Content-Type': 'application/json'}, )
+        return make_response(jsonify(enrollment_error_codes['ENROLLMENT002']), 400,
+                             {'Content-Type': 'application/json'}, )
 
 
 api.add_resource(CourseCRUDApi, '/api/course/<int:course_id>')
 api.add_resource(CourseCreateApi, '/api/course')
 api.add_resource(StudentCRUDApi, '/api/student/<int:student_id>')
 api.add_resource(StudentCreateApi, '/api/student')
+api.add_resource(GetEnrollmentsApi, '/api/student/<int:student_id>/course')
+api.add_resource(DeleteEnrollmentApi, '/api/student/<int:student_id>/course/<int:course_id>')
 
 with app.app_context():
     Student.__table__.create(bind=db.engine, checkfirst=True)
