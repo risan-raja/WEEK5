@@ -100,7 +100,7 @@ class CourseCRUDApi(Resource):
         if course:
             db.session.delete(course)
             db.session.commit()
-            return {'status': 'Successfully Deleted'}, 200
+            return {'message': 'Successfully Deleted'}, 200
         return abort(404, message="Course not found")
 
 
@@ -214,7 +214,7 @@ class StudentCRUDApi(Resource):
         if student:
             db.session.delete(student)
             db.session.commit()
-            return {'status': 'Successfully Deleted'}, 200
+            return {'message': 'Successfully Deleted'}, 200
         return abort(404, message="Student not found")
 
 
@@ -282,6 +282,7 @@ enrollment_fields = {
     'student_id': fields.Integer,
     'course_id': fields.Integer
 }
+
 
 enrollment_parser = reqparse.RequestParser()
 enrollment_parser.add_argument('course_id', type=int)
