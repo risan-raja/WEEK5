@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <title>Update Student</title>
 <body>
-<form action="/student/{{ student.student_id }}/update" method="POST" id="update-form">
+<h1>Update Student</h1>
+<form action="/student/{{ student.student_id }}/update" method="POST" id="update-student-form">
     <div>
         <label>Roll Number:</label>
         <input type="text" name="roll" value="{{ student.roll_number }}" disabled/>
@@ -23,20 +24,17 @@
     <br>
 
     <div>
-        <label>Select Courses: </label>
-        <input type="checkbox" name="courses" value="course_1" {{ courses[0] }}/>
-        <label>MAD I</label>
-        <input type="checkbox" name="courses" value="course_2" {{ courses[1] }}/>
-        <label>DBMS</label>
-        <input type="checkbox" name="courses" value="course_3" {{ courses[2] }}/>
-        <label>PDSA</label>
-        <input type="checkbox" name="courses" value="course_4" {{ courses[3] }}/>
-        <label>BDM</label>
+        <label for="courses">Select Course: </label>
+        <select name="course" id="course">
+            {% for course in courses %}
+                <option value="{{ course.course_id }}">{{ course.course_name }}</option>
+            {% endfor %}
+        </select>
     </div>
     <br>
 
     <div>
-        <input type="submit" value="Submit">
+        <input type="submit" value="Update">
     </div>
     <br>
 

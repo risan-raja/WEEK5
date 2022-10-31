@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8">
     <title>Home</title>
+    <link rel="stylesheet" href="../static/style.css">
 <body>
-<h1 style="text-align: center"> Student Details </h1>
-<table id="personal-details">
+<h1 class="align-center"> Student Details </h1>
+<table id="student-detail">
     <tr>
         <th>Roll Number</th>
         <th>First Name</th>
@@ -17,14 +18,15 @@
         <td>{{ student.last_name }}</td>
     </tr>
 </table>
-<h1 style="text-align: center"> Enrollment List </h1>
+<h1 class="align-center"> Enrollment List </h1>
 
-<table id="enroll-table">
+<table id="student-enrollments">
     <tr>
-        <th>S. No.</th>
+        <th>SNo</th>
         <th>Course Code</th>
         <th>Course Name</th>
         <th>Course Description</th>
+        <th>Actions</th>
     </tr>
     {% for course in student.courses %}
 
@@ -34,12 +36,15 @@
             <td>{{ course.course_code }}</td>
             <td>{{ course.course_name }}</td>
             <td>{{ course.course_description }}</td>
+            <td>
+                <a href="/student/{{ student.student_id }}/withdraw/{{ course.course_id }}">Withdraw</a>
+            </td>
         </tr>
     {% endfor %}
 </table>
 <br>
-<div style="text-align: center">
-<a href="/" style="text-align: center"> Go Back</a>
+<div class="align-center">
+    <a href="/" class="align-center"> Go Back</a>
 </div>
 </body>
 </html>

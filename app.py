@@ -64,6 +64,11 @@ def main():
     return render_template("index.html.jinja", students=students)
 
 
+"""
+STUDENT CRUD OPERATIONS
+"""
+
+
 @app.route('/student/create', methods=['GET', 'POST'])
 def create_student():
     if request.method == 'POST':
@@ -71,18 +76,13 @@ def create_student():
         first_name = request.form['f_name']
         last_name = request.form['l_name']
         if check_roll_exist(roll_number):
-            return render_template("create.html.jinja", error="Roll number already exists")
+            return render_template("create_student_error.html.jinja", error="Roll number already exists")
         else:
             student = Student(
                 roll_number=roll_number,
                 first_name=first_name,
                 last_name=last_name
             )
-            selected_courses = request.form.getlist('courses')
-            for course_id in selected_courses:
-                course = Course.query.filter_by(course_id=int(course_id[-1])).first()
-                student.courses.append(course)
-
             db.session.add(student)
             db.session.commit()
         return redirect(url_for('main'))
@@ -98,20 +98,17 @@ def update_student(student_id):
         last_name = request.form['l_name']
         student.first_name = first_name
         student.last_name = last_name
-        student.courses = []
         db.session.commit()
-        selected_courses = request.form.getlist('courses')
-        for course_id in selected_courses:
-            course = Course.query.filter_by(course_id=int(course_id[-1])).first()
-            student.courses.append(course)
+        new_courses = request.form['course']
+        curr_courses = [course.course_id for course in student.courses]
+        for course in new_courses:
+            if course not in curr_courses:
+                student.courses.append(Course.query.filter_by(course_id=course).first())
         db.session.commit()
         return redirect(url_for('main'))
 
     if request.method == 'GET':
-        courses = [""] * 4
-        for course in student.courses:
-            courses[course.course_id - 1] = "checked=true"
-
+        courses = Course.query.all()
         return render_template("update_student.html.jinja", student=student, courses=courses)
 
 
@@ -129,6 +126,85 @@ def student_detail(student_id):
     student = Student.query.filter_by(student_id=student_id).first()
     if request.method == 'GET':
         return render_template("student_details.html.jinja", student=student)
+
+
+@app.route("/student/<int:student_id>/withdraw/<int:course_id>", methods=['GET', 'POST'])
+def withdraw_course(student_id, course_id):
+    student = Student.query.filter_by(student_id=student_id).first()
+    course = Course.query.filter_by(course_id=course_id).first()
+    student.courses.remove(course)
+    db.session.commit()
+    return redirect(url_for('main'))
+
+
+"""
+COURSE CRUD OPERATIONS
+"""
+
+
+def check_course_exist(course_code):
+    if Course.query.filter_by(course_code=course_code).first():
+        return True
+    return False
+
+
+@app.route('/courses', methods=['GET'])
+def course_index():
+    courses = Course.query.all()
+    return render_template("course_index.html.jinja", courses=courses)
+
+
+@app.route('/course/create', methods=['GET', 'POST'])
+def create_course():
+    if request.method == 'POST':
+        course_name = request.form['c_name']
+        course_code = request.form['code']
+        course_description = request.form['desc']
+        if check_course_exist(course_code):
+            return render_template("create_course_error.html.jinja", error="Course code already exists")
+        else:
+            course = Course(
+                course_name=course_name,
+                course_code=course_code,
+                course_description=course_description
+            )
+            db.session.add(course)
+            db.session.commit()
+        return redirect(url_for('course_index'))
+    if request.method == 'GET':
+        return render_template("create_course.html.jinja")
+
+
+@app.route('/course/<int:course_id>/update', methods=['GET', 'POST'])
+def update_course(course_id):
+    course = Course.query.filter_by(course_id=course_id).first()
+    if request.method == 'POST':
+        course_name = request.form['c_name']
+        # course_code = request.form['code']
+        course_description = request.form['desc']
+        course.course_name = course_name
+        # course.course_code = course_code
+        course.course_description = course_description
+        db.session.commit()
+        return redirect(url_for('course_index'))
+    if request.method == 'GET':
+        return render_template("update_course.html.jinja", course=course)
+
+
+@app.route('/course/<int:course_id>/delete', methods=['GET'])
+def delete_course(course_id):
+    course = Course.query.filter_by(course_id=course_id).first()
+    if request.method == 'GET':
+        db.session.delete(course)
+        db.session.commit()
+        return redirect(url_for('main'))
+
+
+@app.route('/course/<int:course_id>', methods=['GET'])
+def course_detail(course_id):
+    course = Course.query.filter_by(course_id=course_id).first()
+    if request.method == 'GET':
+        return render_template("course_details.html.jinja", course=course)
 
 
 with app.app_context():

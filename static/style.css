@@ -1,0 +1,15 @@
+#heading-box{
+    width: 100%;
+}
+#heading-box-left{
+    float: left;
+    width: 50%;
+}
+#heading-box-right{
+    text-align: right;
+    float: right;
+    width: 50%;
+}
+.align-center{
+    text-align: center;
+}
