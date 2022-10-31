@@ -1,14 +1,10 @@
 from flask import Flask, make_response, jsonify
-from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse, abort, marshal, fields
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-CORS(app)
 api = Api(app)
-# current_dir = os.path.abspath(os.path.dirname(__file__))
-# noinspection DuplicatedCode
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqllite///home//mlop3n//PycharmProjects//WEEK5//database.sqlite3'
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///api_database.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.config['JSON_SORT_KEYS'] = False
@@ -282,7 +278,6 @@ enrollment_fields = {
     'student_id': fields.Integer,
     'course_id': fields.Integer
 }
-
 
 enrollment_parser = reqparse.RequestParser()
 enrollment_parser.add_argument('course_id', type=int)
