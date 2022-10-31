@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# current_dir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.sqlite3"
 db = SQLAlchemy()
 db.init_app(app)
@@ -35,7 +34,7 @@ class Course(db.Model):
 
 class Student(db.Model):
     student_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    roll_number = db.Column(db.Integer, unique=True, nullable=False)
+    roll_number = db.Column(db.String, unique=True, nullable=False)
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=True)
     courses = db.relationship(
@@ -130,7 +129,6 @@ def student_detail(student_id):
     student = Student.query.filter_by(student_id=student_id).first()
     if request.method == 'GET':
         return render_template("student_details.html.jinja", student=student)
-
 
 
 with app.app_context():
